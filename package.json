@@ -1,0 +1,27 @@
+{
+  "name": "onecomme-plugin-comment-filter",
+  "version": "1.0.0",
+  "description": "NG Word & Comment Complete Drop Filter Plugin for OneComme (わんコメ公式推奨設計 NGワード完全非表示プラグイン)",
+  "main": "plugin.js",
+  "scripts": {
+    "test": "node -e \"console.log('No test specified')\""
+  },
+  "keywords": [
+    "onecomme",
+    "onecomme-plugin",
+    "filter",
+    "ng-word",
+    "comment-filter",
+    "streaming"
+  ],
+  "author": "orangeqoon",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orangeqoon/onecomme-plugin-comment-filter.git"
+  },
+  "bugs": {
+    "url": "https://github.com/orangeqoon/onecomme-plugin-comment-filter/issues"
+  },
+  "homepage": "https://github.com/orangeqoon/onecomme-plugin-comment-filter#readme"
+}

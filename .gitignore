@@ -1,0 +1,6 @@
+# 設定ファイル（ユーザー固有のNGリスト等をリポジトリにコミットしない場合）
+# config.json
+node_modules/
+.DS_Store
+Thumbs.db
+*.log

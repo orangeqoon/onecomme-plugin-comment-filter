@@ -1,0 +1,15 @@
+{
+  "enabled": true,
+  "matchMode": "partial",
+  "caseSensitive": false,
+  "enableRegex": true,
+  "protectGifts": true,
+  "filterUserName": false,
+  "ngWords": [
+    "テストNGワード",
+    "スパムワード",
+    "/https?:\\/\\/[^\\s]+/i"
+  ],
+  "ngUserNames": [],
+  "ngUserIds": []
+}

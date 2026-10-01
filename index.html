@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NGワード完全非表示プラグイン 設定</title>
+  <style>
+    :root {
+      --bg-primary: #141721;
+      --bg-card: #1c2130;
+      --bg-input: #121520;
+      --text-main: #f1f5f9;
+      --text-sub: #94a3b8;
+      --accent: #f43f5e;
+      --accent-hover: #e11d48;
+      --accent-gradient: linear-gradient(135deg, #f43f5e, #fb7185);
+      --border: #334155;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      padding: 24px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+    }
+
+    .logo-badge {
+      background: var(--accent-gradient);
+      color: white;
+      font-weight: 800;
+      font-size: 14px;
+      padding: 6px 14px;
+      border-radius: var(--radius);
+      box-shadow: 0 2px 10px rgba(244, 63, 94, 0.35);
+      letter-spacing: 0.5px;
+    }
+
+    .header-text h1 {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .header-text p {
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+
+    .status-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-indicator {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #64748b;
+      transition: all 0.3s;
+    }
+
+    .status-indicator.active {
+      background: var(--success);
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.6);
+    }
+
+    .status-indicator.disabled {
+      background: #64748b;
+    }
+
+    .status-title {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .status-desc {
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    /* 統計パネル */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      text-align: center;
+    }
+
+    .stat-num {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .stat-num.filtered {
+      color: var(--accent);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-top: 2px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text-main);
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-top: 4px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 140px;
+      padding: 10px 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-main);
+      font-size: 14px;
+      font-family: Consolas, Monaco, "Courier New", monospace;
+      outline: none;
+      resize: vertical;
+      transition: border-color 0.2s;
+      line-height: 1.5;
+    }
+
+    textarea:focus, select:focus {
+      border-color: #fb7185;
+    }
+
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-main);
+      font-size: 14px;
+      outline: none;
+    }
+
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .checkbox-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .switch-btn {
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-main);
+      transition: all 0.2s;
+    }
+
+    .switch-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: var(--radius);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--accent-gradient);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+
+    /* 直近除外ログテーブル */
+    .log-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+
+    .log-table th, .log-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      text-align: left;
+    }
+
+    .log-table th {
+      color: var(--text-sub);
+      font-weight: 600;
+    }
+
+    .log-badge-reason {
+      background: rgba(244, 63, 94, 0.2);
+      color: #fb7185;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1e293b;
+      border: 1px solid var(--border);
+      color: white;
+      padding: 10px 20px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="logo-badge">NG Filter</div>
+    <div class="header-text">
+      <h1>NGワード完全非表示プラグイン</h1>
+      <p>わんコメ公式推奨設計 コメント完全抹消フィルター v1.0.0</p>
+    </div>
+  </div>
+
+  <!-- 有効化ステータスカード -->
+  <div class="status-card">
+    <div class="status-left">
+      <div class="status-indicator" id="status-indicator"></div>
+      <div>
+        <div class="status-title" id="status-title">フィルター稼働中</div>
+        <div class="status-desc" id="status-desc">NGワードを含むコメントを完全に破棄・非表示にします</div>
+      </div>
+    </div>
+    <button class="switch-btn active" id="master-switch" onclick="toggleMasterSwitch()">機能: ON</button>
+  </div>
+
+  <!-- 統計カウンター -->
+  <div class="stats-grid">
+    <div class="stat-box">
+      <div class="stat-num" id="stat-checked">0</div>
+      <div class="stat-label">検査コメント総数</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num filtered" id="stat-filtered">0</div>
+      <div class="stat-label">完全除外コメント数</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num" id="stat-rate">0%</div>
+      <div class="stat-label">除外遮断率</div>
+    </div>
+  </div>
+
+  <!-- NGワード設定 -->
+  <div class="card">
+    <div class="card-title">🚫 NGワード一覧 (1行に1ワード)</div>
+    <div class="form-group">
+      <textarea id="ng-words" placeholder="ここにNGワードを入力してください&#10;例:&#10;荒らしワード&#10;スパム単語&#10;/https?:\/\/[^\s]+/i (正規表現)"></textarea>
+      <div class="hint">
+        ※ 1行に1単語ずつ入力してください。空行は無視されます。<br>
+        ※ <code>/パターン/フラグ</code> の形式で書くと正規表現として自動解釈されます（例: <code>/https?:\/\//i</code> でURLを含むコメントを完全除外）。
+      </div>
+    </div>
+  </div>
+
+  <!-- 判定オプション -->
+  <div class="card">
+    <div class="card-title">⚙️ 判定ルール設定</div>
+
+    <div class="form-group">
+      <label for="match-mode">一致方式</label>
+      <select id="match-mode">
+        <option value="partial">部分一致（推奨: コメント内にNGワードが含まれていたら除外）</option>
+        <option value="exact">完全一致（コメント全体がNGワードそのものだった場合のみ除外）</option>
+      </select>
+    </div>
+
+    <div class="checkbox-group" style="margin-top: 16px;">
+      <label class="checkbox-item">
+        <input type="checkbox" id="enable-regex" checked>
+        <div>
+          <strong>正規表現を有効にする (enableRegex)</strong>
+          <div class="hint"><code>/.../</code> で囲まれたルールを正規表現として判定します。</div>
+        </div>
+      </label>
+
+      <label class="checkbox-item">
+        <input type="checkbox" id="protect-gifts" checked>
+        <div>
+          <strong>ギフト・投げ銭・スーパーチャットは保護する (protectGifts)</strong>
+          <div class="hint">誤爆防止のため、投げ銭やギフトが付いたコメントはNG判定から除外して通常通り受け取ります。</div>
+        </div>
+      </label>
+
+      <label class="checkbox-item">
+        <input type="checkbox" id="case-sensitive">
+        <div>
+          <strong>大文字・小文字を厳密に区別する (caseSensitive)</strong>
+          <div class="hint">通常はチェック不要です（OFFの場合、英字のABCとabcを同一とみなして判定します）。</div>
+        </div>
+      </label>
+
+      <label class="checkbox-item">
+        <input type="checkbox" id="filter-user-name">
+        <div>
+          <strong>ユーザー名もNGワード検査の対象にする (filterUserName)</strong>
+          <div class="hint">ユーザー名にNGワードが含まれる場合も、そのコメントを丸ごと除外します。</div>
+        </div>
+      </label>
+    </div>
+  </div>
+
+  <!-- 高度なブロック設定 -->
+  <div class="card">
+    <div class="card-title">🛡️ ユーザー単位の完全ブロック (オプション)</div>
+
+    <div class="form-group">
+      <label for="ng-user-ids">NGユーザーID一覧 (1行に1ID)</label>
+      <textarea id="ng-user-ids" style="height: 80px;" placeholder="特定のユーザーIDを拒否したい場合に入力（1行1ID）"></textarea>
+      <div class="hint">指定したIDを持つ投稿者のコメントを無条件で完全に破棄します。</div>
+    </div>
+
+    <div class="form-group" style="margin-top: 14px;">
+      <label for="ng-user-names">NGユーザー名一覧 (1行に1名前)</label>
+      <textarea id="ng-user-names" style="height: 80px;" placeholder="特定の投稿者名を拒否したい場合に入力（1行1名前）"></textarea>
+      <div class="hint">指定した名前と完全一致する投稿者のコメントを無条件で完全に破棄します。</div>
+    </div>
+  </div>
+
+  <!-- 直近に除外されたコメントログ -->
+  <div class="card">
+    <div class="card-title">📋 直近に完全除外されたコメント履歴</div>
+    <div style="max-height: 220px; overflow-y: auto;">
+      <table class="log-table">
+        <thead>
+          <tr>
+            <th style="width: 70px;">時刻</th>
+            <th style="width: 100px;">投稿者</th>
+            <th style="width: 140px;">除外理由</th>
+            <th>コメント内容</th>
+          </tr>
+        </thead>
+        <tbody id="log-body">
+          <tr>
+            <td colspan="4" style="text-align: center; color: var(--text-sub); padding: 16px;">
+              除外履歴はありません
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" onclick="saveSettings()">💾 設定を保存する</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">設定を保存しました</div>
+
+<script>
+  const PLUGIN_API_URL = '/api/plugins/com.orangeqoon.comment-ng-filter';
+  let isPluginEnabled = true;
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function toggleMasterSwitch() {
+    isPluginEnabled = !isPluginEnabled;
+    updateSwitchUi();
+  }
+
+  function updateSwitchUi() {
+    const btn = document.getElementById('master-switch');
+    const dot = document.getElementById('status-indicator');
+    const title = document.getElementById('status-title');
+    const desc = document.getElementById('status-desc');
+
+    if (isPluginEnabled) {
+      btn.className = 'switch-btn active';
+      btn.textContent = '機能: ON';
+      dot.className = 'status-indicator active';
+      title.textContent = 'フィルター稼働中';
+      desc.textContent = 'NGワードを含むコメントを完全に破棄・非表示にします';
+    } else {
+      btn.className = 'switch-btn';
+      btn.textContent = '機能: OFF (停止中)';
+      dot.className = 'status-indicator disabled';
+      title.textContent = 'フィルター一時停止中';
+      desc.textContent = 'すべてのコメントが通常通り通過します';
+    }
+  }
+
+  async function fetchStatus() {
+    try {
+      const res = await fetch(PLUGIN_API_URL);
+      if (!res.ok) return;
+      const data = await res.json();
+      const conf = data.config || {};
+      const st = data.stats || {};
+
+      isPluginEnabled = conf.enabled !== false;
+      updateSwitchUi();
+
+      // 入力値の反映（初回または未フォーカス時のみ）
+      if (!document.activeElement || document.activeElement.tagName !== 'TEXTAREA') {
+        if (Array.isArray(conf.ngWords)) {
+          document.getElementById('ng-words').value = conf.ngWords.join('\n');
+        }
+        if (Array.isArray(conf.ngUserIds)) {
+          document.getElementById('ng-user-ids').value = conf.ngUserIds.join('\n');
+        }
+        if (Array.isArray(conf.ngUserNames)) {
+          document.getElementById('ng-user-names').value = conf.ngUserNames.join('\n');
+        }
+      }
+
+      document.getElementById('match-mode').value = conf.matchMode || 'partial';
+      document.getElementById('enable-regex').checked = conf.enableRegex !== false;
+      document.getElementById('protect-gifts').checked = conf.protectGifts !== false;
+      document.getElementById('case-sensitive').checked = conf.caseSensitive === true;
+      document.getElementById('filter-user-name').checked = conf.filterUserName === true;
+
+      // 統計
+      const checked = st.totalChecked || 0;
+      const filtered = st.totalFiltered || 0;
+      const rate = checked > 0 ? ((filtered / checked) * 100).toFixed(1) : 0;
+
+      document.getElementById('stat-checked').textContent = checked.toLocaleString();
+      document.getElementById('stat-filtered').textContent = filtered.toLocaleString();
+      document.getElementById('stat-rate').textContent = rate + '%';
+
+      // 履歴テーブル
+      renderLogs(st.recentFiltered || []);
+    } catch (e) {
+      console.warn('ステータス取得失敗:', e);
+    }
+  }
+
+  function renderLogs(logs) {
+    const tbody = document.getElementById('log-body');
+    if (!logs || logs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-sub); padding: 16px;">除外履歴はありません</td></tr>';
+      return;
+    }
+
+    const escapeHtml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    tbody.innerHTML = logs.map(item => `
+      <tr>
+        <td style="color: var(--text-sub);">${escapeHtml(item.time)}</td>
+        <td><strong>${escapeHtml(item.userName)}</strong></td>
+        <td><span class="log-badge-reason">${escapeHtml(item.reason)}</span></td>
+        <td>${escapeHtml(item.commentPreview)}</td>
+      </tr>
+    `).join('');
+  }
+
+  async function saveSettings() {
+    const parseLines = (id) => {
+      const val = document.getElementById(id).value;
+      return val.split('\n').map(l => l.trim()).filter(Boolean);
+    };
+
+    const payload = {
+      enabled: isPluginEnabled,
+      matchMode: document.getElementById('match-mode').value,
+      enableRegex: document.getElementById('enable-regex').checked,
+      protectGifts: document.getElementById('protect-gifts').checked,
+      caseSensitive: document.getElementById('case-sensitive').checked,
+      filterUserName: document.getElementById('filter-user-name').checked,
+      ngWords: parseLines('ng-words'),
+      ngUserIds: parseLines('ng-user-ids'),
+      ngUserNames: parseLines('ng-user-names')
+    };
+
+    try {
+      const res = await fetch(PLUGIN_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('✅ 設定を保存しました (NGワード: ' + (payload.ngWords.length) + '件)');
+        fetchStatus();
+      } else {
+        alert('保存エラー: ' + (data.error || '不明なエラー'));
+      }
+    } catch (e) {
+      alert('通信エラー: ' + e.message);
+    }
+  }
+
+  fetchStatus();
+  setInterval(fetchStatus, 3000);
+</script>
+
+</body>
+</html>
