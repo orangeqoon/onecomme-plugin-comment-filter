@@ -344,7 +344,7 @@
     <div class="logo-badge">NG Filter</div>
     <div class="header-text">
       <h1>NGワード完全非表示プラグイン</h1>
-      <p>わんコメ公式推奨設計 コメント完全抹消フィルター v1.0.0</p>
+      <p>わんコメ公式推奨設計 コメント完全抹消フィルター v1.0.1</p>
     </div>
   </div>
 
@@ -591,14 +591,34 @@
       return val.split('\n').map(l => l.trim()).filter(Boolean);
     };
 
+    const isRegex = document.getElementById('enable-regex').checked;
+    const ngWords = parseLines('ng-words');
+
+    // 正規表現の構文チェック
+    if (isRegex) {
+      for (const line of ngWords) {
+        if (line.startsWith('/') && line.lastIndexOf('/') > 0) {
+          const lastSlash = line.lastIndexOf('/');
+          const body = line.slice(1, lastSlash);
+          const flags = line.slice(lastSlash + 1);
+          try {
+            new RegExp(body, flags);
+          } catch (err) {
+            alert(`⚠️ 正規表現の構文エラーがあります:\n\n「${line}」\n\nエラー内容: ${err.message}\n修正してから再度保存してください。`);
+            return;
+          }
+        }
+      }
+    }
+
     const payload = {
       enabled: isPluginEnabled,
       matchMode: document.getElementById('match-mode').value,
-      enableRegex: document.getElementById('enable-regex').checked,
+      enableRegex: isRegex,
       protectGifts: document.getElementById('protect-gifts').checked,
       caseSensitive: document.getElementById('case-sensitive').checked,
       filterUserName: document.getElementById('filter-user-name').checked,
-      ngWords: parseLines('ng-words'),
+      ngWords,
       ngUserIds: parseLines('ng-user-ids'),
       ngUserNames: parseLines('ng-user-names')
     };

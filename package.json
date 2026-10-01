@@ -1,6 +1,6 @@
 {
   "name": "onecomme-plugin-comment-filter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "NG Word & Comment Complete Drop Filter Plugin for OneComme (わんコメ公式推奨設計 NGワード完全非表示プラグイン)",
   "main": "plugin.js",
   "scripts": {

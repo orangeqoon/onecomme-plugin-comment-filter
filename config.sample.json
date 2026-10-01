@@ -6,8 +6,6 @@
   "protectGifts": true,
   "filterUserName": false,
   "ngWords": [
-    "テストNGワード",
-    "スパムワード",
     "/https?:\\/\\/[^\\s]+/i"
   ],
   "ngUserNames": [],

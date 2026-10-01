@@ -1,5 +1,5 @@
-# 設定ファイル（ユーザー固有のNGリスト等をリポジトリにコミットしない場合）
-# config.json
+# 設定ファイル（ユーザー固有のNGリスト等をリポジトリにコミットしない）
+config.json
 node_modules/
 .DS_Store
 Thumbs.db

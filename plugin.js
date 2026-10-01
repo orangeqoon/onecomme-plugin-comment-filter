@@ -61,6 +61,7 @@ function saveConfig(dir, newConfig) {
   try {
     fs.writeFileSync(cfgPath, JSON.stringify(newConfig, null, 2), 'utf8');
     config = { ...config, ...newConfig };
+    regexCache.clear();
     log('設定を保存・更新しました (NGワード数: ' + (config.ngWords?.length || 0) + '件)');
     return true;
   } catch (err) {
@@ -69,20 +70,46 @@ function saveConfig(dir, newConfig) {
   }
 }
 
+// 正規表現キャッシュ (コンパイル負荷の軽減)
+const regexCache = new Map();
+
+function getCachedRegex(pattern, caseSensitive) {
+  const cacheKey = pattern + '::' + (caseSensitive ? '1' : '0');
+  if (regexCache.has(cacheKey)) {
+    return regexCache.get(cacheKey);
+  }
+
+  if (pattern.startsWith('/') && pattern.lastIndexOf('/') > 0) {
+    try {
+      const lastSlash = pattern.lastIndexOf('/');
+      const body = pattern.slice(1, lastSlash);
+      const flags = pattern.slice(lastSlash + 1);
+      const regex = new RegExp(body, flags || (caseSensitive ? '' : 'i'));
+      regexCache.set(cacheKey, regex);
+      return regex;
+    } catch (_) {
+      regexCache.set(cacheKey, null);
+      return null;
+    }
+  }
+
+  regexCache.set(cacheKey, null);
+  return null;
+}
+
 // 単語・正規表現の一致判定
 function testPattern(text, pattern, isRegexEnabled, matchMode, caseSensitive) {
   if (!text || !pattern) return false;
 
   // 1. 正規表現モード（/パターン/フラグ 形式）
   if (isRegexEnabled && pattern.startsWith('/') && pattern.lastIndexOf('/') > 0) {
-    try {
-      const lastSlash = pattern.lastIndexOf('/');
-      const body = pattern.slice(1, lastSlash);
-      const flags = pattern.slice(lastSlash + 1);
-      const regex = new RegExp(body, flags || (caseSensitive ? '' : 'i'));
-      return regex.test(text);
-    } catch (_) {
-      // 不正な正規表現の場合は通常文字列判定へフォールバック
+    const regex = getCachedRegex(pattern, caseSensitive);
+    if (regex) {
+      try {
+        return regex.test(text);
+      } catch (_) {
+        // 万が一の実行時エラーはフォールバック
+      }
     }
   }
 
@@ -130,14 +157,19 @@ function checkComment(commentData) {
     }
   }
 
+  // HTMLタグ（わんコメが展開した絵文字 <img> タグ等）を除去したプレーンテキストを作成
+  // （例: Kick/Twitch等の絵文字 <img src="https://..."> に対するURLフィルター誤爆を防止）
+  const plainText = commentText.replace(/<[^>]*>/g, ' ').trim();
+
   // 3. NGワード検査（コメント本文およびオプションでユーザー名）
   if (Array.isArray(config.ngWords) && config.ngWords.length > 0) {
     for (const word of config.ngWords) {
       const p = String(word || '').trim();
       if (!p) continue;
 
-      // コメント本文を検査
-      if (testPattern(commentText, p, config.enableRegex, config.matchMode, config.caseSensitive)) {
+      // コメント本文を検査（プレーンテキスト優先）
+      const targetText = plainText || commentText;
+      if (testPattern(targetText, p, config.enableRegex, config.matchMode, config.caseSensitive)) {
         return { matched: true, reason: `NGワード: ${p}` };
       }
 
@@ -154,7 +186,7 @@ function checkComment(commentData) {
 const plugin = {
   name: 'NGワード完全非表示プラグイン (Comment NG Filter)',
   uid: 'com.orangeqoon.comment-ng-filter',
-  version: '1.0.0',
+  version: '1.0.1',
   author: 'orangeqoon',
   url: 'https://github.com/orangeqoon/onecomme-plugin-comment-filter',
   permissions: ['filter.comment'],
@@ -162,8 +194,9 @@ const plugin = {
 
   init({ dir }) {
     currentDir = dir;
+    regexCache.clear();
     loadConfig(dir);
-    log(`初期化完了 v1.0.0 (有効状態: ${config.enabled ? 'ON' : 'OFF'}, NGワード登録数: ${config.ngWords?.length || 0}件)`);
+    log(`初期化完了 v1.0.1 (有効状態: ${config.enabled ? 'ON' : 'OFF'}, NGワード登録数: ${config.ngWords?.length || 0}件)`);
   },
 
   /**
@@ -229,11 +262,28 @@ const plugin = {
 
     if (req.method === 'POST') {
       try {
-        const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+        let body = req.body;
+        if (typeof body === 'string') {
+          try {
+            body = JSON.parse(body);
+          } catch (_) {
+            body = null;
+          }
+        }
+
+        if (!body || typeof body !== 'object') {
+          return {
+            code: 400,
+            body: { success: false, error: 'リクエストボディが不正です' }
+          };
+        }
+
         const newConfig = { ...config };
 
         if (body.enabled !== undefined) newConfig.enabled = Boolean(body.enabled);
-        if (body.matchMode !== undefined) newConfig.matchMode = String(body.matchMode);
+        if (body.matchMode !== undefined) {
+          newConfig.matchMode = body.matchMode === 'exact' ? 'exact' : 'partial';
+        }
         if (body.caseSensitive !== undefined) newConfig.caseSensitive = Boolean(body.caseSensitive);
         if (body.enableRegex !== undefined) newConfig.enableRegex = Boolean(body.enableRegex);
         if (body.protectGifts !== undefined) newConfig.protectGifts = Boolean(body.protectGifts);
@@ -249,6 +299,7 @@ const plugin = {
           newConfig.ngUserIds = body.ngUserIds.map(u => String(u).trim()).filter(Boolean);
         }
 
+        regexCache.clear();
         const saved = saveConfig(targetDir, newConfig);
         if (!saved) throw new Error('config.json の書き込みに失敗しました');
 
