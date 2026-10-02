@@ -344,7 +344,7 @@
     <div class="logo-badge">NG Filter</div>
     <div class="header-text">
       <h1>NGワード完全非表示プラグイン</h1>
-      <p>わんコメ公式推奨設計 コメント完全抹消フィルター v1.0.1</p>
+      <p>わんコメ公式推奨設計 コメント完全抹消フィルター v1.0.3</p>
     </div>
   </div>
 
@@ -487,6 +487,15 @@
   const PLUGIN_API_URL = '/api/plugins/com.orangeqoon.comment-ng-filter';
   let isPluginEnabled = true;
 
+  // OneComme wraps plugin request() returns as {code|status, body}.
+  // Prefer body when present so UI sees {success, config, stats}.
+  function unwrapPluginResponse(raw) {
+    if (raw && typeof raw === 'object' && raw.body && typeof raw.body === 'object') {
+      return raw.body;
+    }
+    return raw || {};
+  }
+
   function showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
@@ -524,7 +533,7 @@
     try {
       const res = await fetch(PLUGIN_API_URL);
       if (!res.ok) return;
-      const data = await res.json();
+      const data = unwrapPluginResponse(await res.json());
       const conf = data.config || {};
       const st = data.stats || {};
 
@@ -629,7 +638,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      const data = await res.json();
+      const data = unwrapPluginResponse(await res.json());
       if (data.success) {
         showToast('✅ 設定を保存しました (NGワード: ' + (payload.ngWords.length) + '件)');
         fetchStatus();

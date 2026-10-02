@@ -186,9 +186,9 @@ function checkComment(commentData) {
 const plugin = {
   name: 'NGワード完全非表示プラグイン (Comment NG Filter)',
   uid: 'com.orangeqoon.comment-ng-filter',
-  version: '1.0.1',
+  version: '1.0.3',
   author: 'orangeqoon',
-  url: 'https://github.com/orangeqoon/onecomme-plugin-comment-filter',
+  url: 'http://localhost:11180/plugins/com.orangeqoon.comment-ng-filter/index.html',
   permissions: ['filter.comment'],
   defaultState: {},
 
@@ -196,7 +196,7 @@ const plugin = {
     currentDir = dir;
     regexCache.clear();
     loadConfig(dir);
-    log(`初期化完了 v1.0.1 (有効状態: ${config.enabled ? 'ON' : 'OFF'}, NGワード登録数: ${config.ngWords?.length || 0}件)`);
+    log(`初期化完了 v1.0.3 (有効状態: ${config.enabled ? 'ON' : 'OFF'}, NGワード登録数: ${config.ngWords?.length || 0}件)`);
   },
 
   /**
