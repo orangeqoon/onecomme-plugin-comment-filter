@@ -537,39 +537,51 @@
       const conf = data.config || {};
       const st = data.stats || {};
 
-      isPluginEnabled = conf.enabled !== false;
-      updateSwitchUi();
+      // 1. 設定の差分検知（設定内容がサーバー側で変わった時のみフォームを更新）
+      const confStr = JSON.stringify(conf);
+      if (window.__lastConfStr !== confStr) {
+        window.__lastConfStr = confStr;
+        isPluginEnabled = conf.enabled !== false;
+        updateSwitchUi();
 
-      // 入力値の反映（初回または未フォーカス時のみ）
-      if (!document.activeElement || document.activeElement.tagName !== 'TEXTAREA') {
-        if (Array.isArray(conf.ngWords)) {
-          document.getElementById('ng-words').value = conf.ngWords.join('\n');
-        }
-        if (Array.isArray(conf.ngUserIds)) {
-          document.getElementById('ng-user-ids').value = conf.ngUserIds.join('\n');
-        }
-        if (Array.isArray(conf.ngUserNames)) {
-          document.getElementById('ng-user-names').value = conf.ngUserNames.join('\n');
+        // ユーザーが入力中でない場合のみ反映
+        if (!document.activeElement || (document.activeElement.tagName !== 'TEXTAREA' && document.activeElement.tagName !== 'INPUT')) {
+          if (Array.isArray(conf.ngWords)) {
+            document.getElementById('ng-words').value = conf.ngWords.join('\n');
+          }
+          if (Array.isArray(conf.ngUserIds)) {
+            document.getElementById('ng-user-ids').value = conf.ngUserIds.join('\n');
+          }
+          if (Array.isArray(conf.ngUserNames)) {
+            document.getElementById('ng-user-names').value = conf.ngUserNames.join('\n');
+          }
+          document.getElementById('match-mode').value = conf.matchMode || 'partial';
+          document.getElementById('enable-regex').checked = conf.enableRegex !== false;
+          document.getElementById('protect-gifts').checked = conf.protectGifts !== false;
+          document.getElementById('case-sensitive').checked = conf.caseSensitive === true;
+          document.getElementById('filter-user-name').checked = conf.filterUserName === true;
         }
       }
 
-      document.getElementById('match-mode').value = conf.matchMode || 'partial';
-      document.getElementById('enable-regex').checked = conf.enableRegex !== false;
-      document.getElementById('protect-gifts').checked = conf.protectGifts !== false;
-      document.getElementById('case-sensitive').checked = conf.caseSensitive === true;
-      document.getElementById('filter-user-name').checked = conf.filterUserName === true;
-
-      // 統計
+      // 2. 統計の差分検知（数値が動いた時だけ書き換え）
       const checked = st.totalChecked || 0;
       const filtered = st.totalFiltered || 0;
-      const rate = checked > 0 ? ((filtered / checked) * 100).toFixed(1) : 0;
+      if (window.__lastChecked !== checked || window.__lastFiltered !== filtered) {
+        window.__lastChecked = checked;
+        window.__lastFiltered = filtered;
+        const rate = checked > 0 ? ((filtered / checked) * 100).toFixed(1) : 0;
+        document.getElementById('stat-checked').textContent = checked.toLocaleString();
+        document.getElementById('stat-filtered').textContent = filtered.toLocaleString();
+        document.getElementById('stat-rate').textContent = rate + '%';
+      }
 
-      document.getElementById('stat-checked').textContent = checked.toLocaleString();
-      document.getElementById('stat-filtered').textContent = filtered.toLocaleString();
-      document.getElementById('stat-rate').textContent = rate + '%';
-
-      // 履歴テーブル
-      renderLogs(st.recentFiltered || []);
+      // 3. 履歴の差分検知（ログ配列が変わった時だけテーブル再構築）
+      const recent = st.recentFiltered || [];
+      const recentKey = recent.map(r => r.id || (r.time + r.userName)).join(',');
+      if (window.__lastRecentKey !== recentKey) {
+        window.__lastRecentKey = recentKey;
+        renderLogs(recent);
+      }
     } catch (e) {
       console.warn('ステータス取得失敗:', e);
     }
@@ -650,8 +662,48 @@
     }
   }
 
-  fetchStatus();
-  setInterval(fetchStatus, 3000);
+  let pollTimer = null;
+  let isViewVisible = true;
+  const POLL_INTERVAL = 5000;
+
+  async function pollLoop() {
+    if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
+    if (!isViewVisible || window.__pauseAutoRefresh) return;
+
+    try {
+      await fetchStatus();
+    } finally {
+      if (isViewVisible && !window.__pauseAutoRefresh) {
+        pollTimer = setTimeout(pollLoop, POLL_INTERVAL);
+      }
+    }
+  }
+
+  // iframe 自体の可視状態を IntersectionObserver で監視（display:none や画面外を確実に検知）
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries.some(e => e.isIntersecting);
+      if (visible !== isViewVisible) {
+        isViewVisible = visible;
+        if (isViewVisible) pollLoop();
+        else if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
+      }
+    });
+    observer.observe(document.documentElement);
+  }
+
+  // visibilitychange 監視
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      isViewVisible = false;
+      if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
+    } else {
+      isViewVisible = true;
+      pollLoop();
+    }
+  });
+
+  pollLoop();
 </script>
 
 </body>
